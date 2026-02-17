@@ -23,6 +23,7 @@ export type LightCardConfig = LovelaceCardConfig &
     show_color_temp_control?: boolean;
     show_color_control?: boolean;
     show_scene_control?: boolean;
+    scene_entity?: string;
     collapsible_controls?: boolean;
     use_light_color?: boolean;
   };
@@ -40,6 +41,7 @@ export const lightCardConfigStruct = assign(
     show_color_temp_control: optional(boolean()),
     show_color_control: optional(boolean()),
     show_scene_control: optional(boolean()),
+    scene_entity: optional(string()),
     collapsible_controls: optional(boolean()),
     use_light_color: optional(boolean()),
   })
