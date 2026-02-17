@@ -46,11 +46,18 @@ export class LightColorTempControl extends LitElement {
   onChange(e: CustomEvent<{ value: number }>): void {
     e.stopPropagation();
     const value = e.detail.value;
-
+  
     this.hass.callService("light", "turn_on", {
       entity_id: this.entity.entity_id,
       color_temp_kelvin: value,
     });
+  
+    // Dispatch event so LightCard knows color temp changed
+    this.dispatchEvent(new CustomEvent("color-temp-change", {
+      bubbles: true,
+      composed: true,
+      detail: { color_temp_kelvin: value },
+    }));
   }
 
   private _generateTemperatureGradient = memoizeOne(

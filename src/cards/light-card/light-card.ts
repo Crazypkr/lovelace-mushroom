@@ -342,7 +342,6 @@ export class LightCard
             style=${styleMap(sliderStyle)}
             @current-change=${(e: CustomEvent<{ value?: number }>) => {
             this.onCurrentBrightnessChange(e);
-            this.resetScene();
             }}
           ></mushroom-light-brightness-control>
         `;
@@ -351,7 +350,7 @@ export class LightCard
           <mushroom-light-color-temp-control
             .hass=${this.hass}
             .entity=${entity}
-            @change=${() => this.resetScene()}
+            @color-temp-change=${() => this.resetScene()}
           ></mushroom-light-color-temp-control>
         `;
       case "color_control": {
@@ -359,7 +358,7 @@ export class LightCard
           <mushroom-light-color-control
             .hass=${this.hass}
             .entity=${entity}
-            @change=${() => this.resetScene()}
+            @color-change=${() => this.resetScene()} 
           ></mushroom-light-color-control>
         `;
        }
