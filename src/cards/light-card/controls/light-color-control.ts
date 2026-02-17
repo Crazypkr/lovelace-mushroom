@@ -60,14 +60,21 @@ export class LightColorControl extends LitElement {
   onChange(e: CustomEvent<{ value: number }>): void {
     const value = e.detail.value;
     this._percent = value;
-
+  
     const rgb_color = this._percentToRGB(value / 100);
-
+  
     if (rgb_color.length === 3) {
       this.hass.callService("light", "turn_on", {
         entity_id: this.entity.entity_id,
         rgb_color,
       });
+  
+      // Dispatch a custom event so the LightCard knows the color changed
+      this.dispatchEvent(new CustomEvent("color-change", {
+        bubbles: true,
+        composed: true,
+        detail: { rgb_color },
+      }));
     }
   }
 
