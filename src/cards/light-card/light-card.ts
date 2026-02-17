@@ -98,6 +98,9 @@ export class LightCard
 
   @state() private brightness?: number;
 
+  @state() private _prevColor?: string;
+  @state() private _prevColorTemp?: number;
+
   private get _controls(): LightCardControl[] {
     if (!this._config || !this._stateObj) return [];
 
@@ -149,11 +152,40 @@ export class LightCard
 
   protected updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
+  
     if (this.hass && changedProperties.has("hass")) {
       this.updateActiveControl();
       this.updateBrightness();
+  
+      const stateObj = this._stateObj;
+      if (!stateObj) return;
+  
+      // --- Track color and temperature ---
+      const currentRgb = getRGBColor(stateObj)?.join(",") || "";
+      const currentTemp = stateObj.attributes.color_temp_kelvin ?? null;
+  
+      // Reset scene only if it’s currently active
+      const sceneEntity = this._config?.scene_entity
+        ? this.hass.states[this._config.scene_entity]
+        : undefined;
+      const currentScene = sceneEntity?.state;
+  
+      // Check if color or temp changed externally
+      const colorChanged =
+        this._prevColor !== undefined && currentRgb !== this._prevColor;
+      const tempChanged =
+        this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
+  
+      if ((colorChanged || tempChanged) && currentScene && currentScene !== "None") {
+        this.resetScene();
+      }
+  
+      // Update stored values
+      this._prevColor = currentRgb;
+      this._prevColorTemp = currentTemp;
     }
   }
+
 
   updateBrightness() {
     this.brightness = undefined;
