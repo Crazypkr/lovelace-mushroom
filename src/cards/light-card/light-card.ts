@@ -163,6 +163,17 @@ export class LightCard
     this.brightness = stateObj.attributes.brightness;
   }
 
+  private resetScene() {
+  if (!this._config?.scene_entity) return;
+  const sceneEntity = this.hass.states[this._config.scene_entity];
+  if (sceneEntity && sceneEntity.state !== "None") {
+    this.hass.callService("select", "select_option", {
+      entity_id: this._config.scene_entity,
+      option: "None", // or whatever represents no scene
+    });
+  }
+}
+
   private onCurrentBrightnessChange(e: CustomEvent<{ value?: number }>): void {
     if (e.detail.value != null) {
       this.brightness = (e.detail.value * 255) / 100;
@@ -329,7 +340,10 @@ export class LightCard
             .hass=${this.hass}
             .entity=${entity}
             style=${styleMap(sliderStyle)}
-            @current-change=${this.onCurrentBrightnessChange}
+            @current-change=${(e: CustomEvent<{ value?: number }>) => {
+            this.onCurrentBrightnessChange(e);
+            this.resetScene();
+            }}
           ></mushroom-light-brightness-control>
         `;
       case "color_temp_control":
@@ -337,12 +351,18 @@ export class LightCard
           <mushroom-light-color-temp-control
             .hass=${this.hass}
             .entity=${entity}
+            @current-change=${() => this.resetScene()}
           ></mushroom-light-color-temp-control>
         `;
-      case "color_control":
+      case "color_control": {
         return html`
-          <mushroom-light-color-control .hass=${this.hass} .entity=${entity}></mushroom-light-color-control>
+          <mushroom-light-color-control
+            .hass=${this.hass}
+            .entity=${entity}
+            @color-change=${() => this.resetScene()}
+          ></mushroom-light-color-control>
         `;
+       }
       case "scene_control":
       const sceneEntity = this._config?.scene_entity
         ? this.hass.states[this._config.scene_entity]
