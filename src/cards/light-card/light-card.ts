@@ -358,7 +358,7 @@ export class LightCard
           <mushroom-light-color-control
             .hass=${this.hass}
             .entity=${entity}
-            @change=${() => this.resetScene()}
+            @color-change=${() => this.resetScene()} 
           ></mushroom-light-color-control>
         `;
        }
