@@ -162,7 +162,7 @@ export class LightCard
   
       // --- Track color and temperature ---
       const currentRgb = getRGBColor(stateObj)?.join(",") || "";
-      const currentTemp = stateObj.attributes.color_temp_kelvin ?? null;
+      const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
   
       // Reset scene only if it’s currently active
       const sceneEntity = this._config?.scene_entity
