@@ -55,11 +55,13 @@ import {
 type LightCardControl =
   | "brightness_control"
   | "color_temp_control"
+  | "scene_control"
   | "color_control";
 
 const CONTROLS_ICONS: Record<LightCardControl, string> = {
   brightness_control: "mdi:brightness-4",
   color_temp_control: "mdi:thermometer",
+  scene_control: "mdi:theme-light-dark",
   color_control: "mdi:palette",
 };
 
@@ -115,6 +117,9 @@ export class LightCard
     }
     if (this._config.show_color_control && supportsColorControl(stateObj)) {
       controls.push("color_control");
+    }
+    if (this._config.show_scene_control && this._config.scene_entity) {
+    controls.push("scene_control");
     }
     return controls;
   }
@@ -338,6 +343,35 @@ export class LightCard
         return html`
           <mushroom-light-color-control .hass=${this.hass} .entity=${entity}></mushroom-light-color-control>
         `;
+      case "scene_control":
+      const sceneEntity = this._config?.scene_entity
+        ? this.hass.states[this._config.scene_entity]
+        : undefined;
+    
+      const disabled =
+        !sceneEntity || !sceneEntity.state || sceneEntity.state === "unavailable";
+    
+      return html`
+        <select
+          .value=${sceneEntity?.state ?? ""}
+          .disabled=${disabled}
+          @change=${(e: Event) =>
+            this.hass.callService("select", "select_option", {
+              entity_id: this._config?.scene_entity,
+              option: (e.target as HTMLSelectElement).value,
+            })}
+        >
+          ${(sceneEntity?.attributes.options ?? []).map(
+            (option: string) =>
+              html`<option
+                value=${option}
+                ?selected=${option === sceneEntity.state}
+              >
+                ${option}
+              </option>`
+          )}
+        </select>
+      `;
       default:
         return nothing;
     }
