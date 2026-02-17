@@ -342,7 +342,6 @@ export class LightCard
             style=${styleMap(sliderStyle)}
             @current-change=${(e: CustomEvent<{ value?: number }>) => {
             this.onCurrentBrightnessChange(e);
-            this.resetScene();
             }}
           ></mushroom-light-brightness-control>
         `;
