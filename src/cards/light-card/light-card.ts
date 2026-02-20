@@ -153,32 +153,39 @@ export class LightCard
     if (this.hass && changedProperties.has("hass")) {
       this.updateActiveControl();
       this.updateBrightness();
-    }
-  }
   
-  
-    updateBrightness() {
-      this.brightness = undefined;
       const stateObj = this._stateObj;
-  
       if (!stateObj) return;
-      this.brightness = stateObj.attributes.brightness;
-    }
   
-    private resetScene() {
-    if (!this._config?.scene_entity) return;
-    const sceneEntity = this.hass.states[this._config.scene_entity];
-    if (sceneEntity && sceneEntity.state !== "None") {
-      this.hass.callService("select", "select_option", {
-        entity_id: this._config.scene_entity,
-        option: "None", // or whatever represents no scene
-      });
-    }
-  }
-
-  private onCurrentBrightnessChange(e: CustomEvent<{ value?: number }>): void {
-    if (e.detail.value != null) {
-      this.brightness = (e.detail.value * 255) / 100;
+      // --- Track color and temperature ---
+      const currentRgb = getRGBColor(stateObj)?.join(",") || "";
+      const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
+  
+      // ✅ Prevent scene reset when light is off
+      if (stateObj.state !== "on") {
+        this._prevColor = currentRgb;
+        this._prevColorTemp = currentTemp;
+        return;
+      }
+  
+      // --- Scene and color checks (only while light ON) ---
+      const sceneEntity = this._config?.scene_entity
+        ? this.hass.states[this._config.scene_entity]
+        : undefined;
+      const currentScene = sceneEntity?.state;
+  
+      const colorChanged =
+        this._prevColor !== undefined && currentRgb !== this._prevColor;
+      const tempChanged =
+        this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
+  
+      if ((colorChanged || tempChanged) && currentScene && currentScene !== "None") {
+        this.resetScene();
+      }
+  
+      // Update stored values
+      this._prevColor = currentRgb;
+      this._prevColorTemp = currentTemp;
     }
   }
 
