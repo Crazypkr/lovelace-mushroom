@@ -173,8 +173,13 @@ export class LightCard
       const tempChanged =
         this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
   
-      // Only reset scene if the light is ON and the user changed color/temperature
-      if (stateObj.state === "on" && (colorChanged || tempChanged) && currentScene && currentScene !== "None") {
+      // Only reset scene if light is ON and scene exists and isn't already "None"
+      if (
+        stateObj.state === "on" &&
+        (colorChanged || tempChanged) &&
+        currentScene &&
+        currentScene !== "None"
+      ) {
         this.resetScene();
       }
   
@@ -183,6 +188,7 @@ export class LightCard
       this._prevColorTemp = currentTemp;
     }
   }
+
 
 
 
@@ -199,15 +205,19 @@ export class LightCard
     }
 
     private resetScene() {
-    if (!this._config?.scene_entity) return;
-    const sceneEntity = this.hass.states[this._config.scene_entity];
-    if (sceneEntity && sceneEntity.state !== "None") {
-      this.hass.callService("select", "select_option", {
-        entity_id: this._config.scene_entity,
-        option: "None", // or whatever represents no scene
-      });
+      if (!this._config?.scene_entity) return;
+    
+      const stateObj = this._stateObj;
+      if (!stateObj || stateObj.state !== "on") return; // <-- skip if light is off
+    
+      const sceneEntity = this.hass.states[this._config.scene_entity];
+      if (sceneEntity && sceneEntity.state !== "None") {
+        this.hass.callService("select", "select_option", {
+          entity_id: this._config.scene_entity,
+          option: "None",
+        });
+      }
     }
-  }
 
   private onCurrentBrightnessChange(e: CustomEvent<{ value?: number }>): void {
     if (e.detail.value != null) {
