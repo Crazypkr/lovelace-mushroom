@@ -98,9 +98,6 @@ export class LightCard
 
   @state() private brightness?: number;
 
-  @state() private _prevColor?: string;
-  @state() private _prevColorTemp?: number;
-
   private get _controls(): LightCardControl[] {
     if (!this._config || !this._stateObj) return [];
 
@@ -164,13 +161,19 @@ export class LightCard
       const currentRgb = getRGBColor(stateObj)?.join(",") || "";
       const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
   
-      // Reset scene only if it’s currently active
+      // ✅ Prevent scene reset when light is off
+      if (stateObj.state !== "on") {
+        this._prevColor = currentRgb;
+        this._prevColorTemp = currentTemp;
+        return;
+      }
+  
+      // --- Scene and color checks (only while light ON) ---
       const sceneEntity = this._config?.scene_entity
         ? this.hass.states[this._config.scene_entity]
         : undefined;
       const currentScene = sceneEntity?.state;
   
-      // Check if color or temp changed externally
       const colorChanged =
         this._prevColor !== undefined && currentRgb !== this._prevColor;
       const tempChanged =
@@ -183,32 +186,6 @@ export class LightCard
       // Update stored values
       this._prevColor = currentRgb;
       this._prevColorTemp = currentTemp;
-    }
-  }
-
-
-  updateBrightness() {
-    this.brightness = undefined;
-    const stateObj = this._stateObj;
-
-    if (!stateObj) return;
-    this.brightness = stateObj.attributes.brightness;
-  }
-
-  private resetScene() {
-  if (!this._config?.scene_entity) return;
-  const sceneEntity = this.hass.states[this._config.scene_entity];
-  if (sceneEntity && sceneEntity.state !== "None") {
-    this.hass.callService("select", "select_option", {
-      entity_id: this._config.scene_entity,
-      option: "None", // or whatever represents no scene
-    });
-  }
-}
-
-  private onCurrentBrightnessChange(e: CustomEvent<{ value?: number }>): void {
-    if (e.detail.value != null) {
-      this.brightness = (e.detail.value * 255) / 100;
     }
   }
 
