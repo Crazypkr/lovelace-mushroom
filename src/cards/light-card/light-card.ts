@@ -150,44 +150,35 @@ export class LightCard
   protected updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
   
-    if (this.hass && changedProperties.has("hass")) {
-      this.updateActiveControl();
-      this.updateBrightness();
+    if (!this.hass) return;
   
-      const stateObj = this._stateObj;
-      if (!stateObj) return;
+    const stateObj = this._stateObj;
+    if (!stateObj) return;
   
-      // Track current color and temperature
-      const currentRgb = getRGBColor(stateObj)?.join(",") || "";
-      const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
+    // Track current light state and color/temperature
+    const currentState = stateObj.state;
+    const currentRgb = getRGBColor(stateObj)?.join(",") || "";
+    const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
   
-      // Get current scene entity state
-      const sceneEntity = this._config?.scene_entity
-        ? this.hass.states[this._config.scene_entity]
-        : undefined;
-      const currentScene = sceneEntity?.state;
+    const colorChanged = this._prevColor !== undefined && currentRgb !== this._prevColor;
+    const tempChanged = this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
   
-      // Detect changes
-      const colorChanged =
-        this._prevColor !== undefined && currentRgb !== this._prevColor;
-      const tempChanged =
-        this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
+    const sceneEntity = this._config?.scene_entity
+      ? this.hass.states[this._config.scene_entity]
+      : undefined;
+    const currentScene = sceneEntity?.state;
   
-      // Only reset scene if light is ON and scene exists and isn't already "None"
-      if (
-        stateObj.state === "on" &&
-        (colorChanged || tempChanged) &&
-        currentScene &&
-        currentScene !== "None"
-      ) {
-        this.resetScene();
-      }
-  
-      // Always store the latest values
-      this._prevColor = currentRgb;
-      this._prevColorTemp = currentTemp;
+    // --- RESET ONLY IF LIGHT IS ON ---
+    if (currentState === "on" && (colorChanged || tempChanged) && currentScene && currentScene !== "None") {
+      this.resetScene();
     }
+  
+    // Store latest values
+    this._prevColor = currentRgb;
+    this._prevColorTemp = currentTemp;
+    this._prevLightState = currentState;
   }
+
 
 
 
@@ -396,7 +387,9 @@ export class LightCard
           <mushroom-light-color-temp-control
             .hass=${this.hass}
             .entity=${entity}
-            @color-temp-change=${() => this.resetScene()}
+            @color-temp-change=${() => {
+              if (entity.state === "on") this.resetScene();
+            }}
           ></mushroom-light-color-temp-control>
         `;
       case "color_control": {
@@ -404,7 +397,9 @@ export class LightCard
           <mushroom-light-color-control
             .hass=${this.hass}
             .entity=${entity}
-            @color-change=${() => this.resetScene()} 
+            @color-change=${() => {
+              if (entity.state === "on") this.resetScene();
+            }}
           ></mushroom-light-color-control>
         `;
        }
