@@ -157,31 +157,32 @@ export class LightCard
       const stateObj = this._stateObj;
       if (!stateObj) return;
   
-      // --- Track color and temperature ---
+      // Track current color and temperature
       const currentRgb = getRGBColor(stateObj)?.join(",") || "";
       const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
   
-      // --- Reset scene if color or temperature changed ---
+      // Get current scene entity state
       const sceneEntity = this._config?.scene_entity
         ? this.hass.states[this._config.scene_entity]
         : undefined;
       const currentScene = sceneEntity?.state;
   
-      const colorChanged =
-        this._prevColor !== undefined && currentRgb !== this._prevColor;
-      const tempChanged =
-        this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
+      // Detect changes
+      const colorChanged = this._prevColor !== undefined && currentRgb !== this._prevColor;
+      const tempChanged = this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
   
-      // Only reset scene if scene exists and isn't already None
+      // Reset scene if it exists and is not already "None"
       if ((colorChanged || tempChanged) && currentScene && currentScene !== "None") {
         this.resetScene();
       }
   
-      // Always update stored values
+      // Always store the latest values
       this._prevColor = currentRgb;
       this._prevColorTemp = currentTemp;
     }
-}
+  }
+
+
 
 
   
