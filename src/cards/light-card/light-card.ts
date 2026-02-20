@@ -211,6 +211,7 @@ export class LightCard
       this.brightness = (e.detail.value * 255) / 100;
     }
   }
+  
 
   updateActiveControl() {
     const isActiveControlSupported = this._activeControl
