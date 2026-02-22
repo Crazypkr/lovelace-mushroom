@@ -149,14 +149,27 @@ export class LightCard
 
   protected updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
+
     if (!this.hass) return;
+
     const stateObj = this._stateObj;
     if (!stateObj) return;
+
+    // Track current light state and color/temperature
+    const currentState = stateObj.state;
+    const currentRgb = getRGBColor(stateObj)?.join(",") || "";
+    const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
+
+    const sceneEntity = this._config?.scene_entity
+      ? this.hass.states[this._config.scene_entity]
+      : undefined;
+    const currentScene = sceneEntity?.state;
   }
 
   updateBrightness() {
     this.brightness = undefined;
     const stateObj = this._stateObj;
+
     if (!stateObj) return;
     this.brightness = stateObj.attributes.brightness;
   }
@@ -351,10 +364,6 @@ export class LightCard
         const sceneEntity = this._config?.scene_entity
           ? this.hass.states[this._config.scene_entity]
           : undefined;
-
-        if (!sceneEntity) {
-          return html`<select disabled><option>Unavailable</option></select>`;
-        }
 
         const disabled =
           !sceneEntity ||
