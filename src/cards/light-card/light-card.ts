@@ -181,12 +181,19 @@ export class LightCard
   }
 
   updateActiveControl() {
-    const isActiveControlSupported = this._activeControl
-      ? this._controls.includes(this._activeControl)
-      : false;
-    this._activeControl = isActiveControlSupported
-      ? this._activeControl
-      : this._controls[0];
+    // If no controls are available, clear active control
+    if (!this._controls.length) {
+      this._activeControl = undefined;
+      return;
+    }
+
+    // If current active control is still valid, keep it
+    if (this._activeControl && this._controls.includes(this._activeControl)) {
+      return;
+    }
+
+    // Otherwise, pick the first available control
+    this._activeControl = this._controls[0];
   }
 
   private _handleAction(ev: ActionHandlerEvent) {
