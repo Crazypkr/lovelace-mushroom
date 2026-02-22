@@ -119,7 +119,7 @@ export class LightCard
       controls.push("color_control");
     }
     if (this._config.show_scene_control && this._config.scene_entity) {
-    controls.push("scene_control");
+      controls.push("scene_control");
     }
     return controls;
   }
@@ -149,82 +149,23 @@ export class LightCard
 
   protected updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
-  
-    if (this.hass && changedProperties.has("hass")) {
-      this.updateActiveControl();
-      this.updateBrightness();
-  
-      const stateObj = this._stateObj;
-      if (!stateObj) return;
-  
-      // Track current color and temperature
-      const currentRgb = getRGBColor(stateObj)?.join(",") || "";
-      const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
-  
-      // Get current scene entity state
-      const sceneEntity = this._config?.scene_entity
-        ? this.hass.states[this._config.scene_entity]
-        : undefined;
-      const currentScene = sceneEntity?.state;
-  
-      // Detect changes
-      const colorChanged =
-        this._prevColor !== undefined && currentRgb !== this._prevColor;
-      const tempChanged =
-        this._prevColorTemp !== undefined && currentTemp !== this._prevColorTemp;
-  
-      // Only reset scene if light is ON and scene exists and isn't already "None"
-      if (
-        stateObj.state === "on" &&
-        (colorChanged || tempChanged) &&
-        currentScene &&
-        currentScene !== "None"
-      ) {
-        this.resetScene();
-      }
-  
-      // Always store the latest values
-      this._prevColor = currentRgb;
-      this._prevColorTemp = currentTemp;
-    }
+    if (!this.hass) return;
+    const stateObj = this._stateObj;
+    if (!stateObj) return;
   }
 
-
-
-
-
-
-  
-
-    updateBrightness() {
-      this.brightness = undefined;
-      const stateObj = this._stateObj;
-  
-      if (!stateObj) return;
-      this.brightness = stateObj.attributes.brightness;
-    }
-
-    private resetScene() {
-      if (!this._config?.scene_entity) return;
-    
-      const stateObj = this._stateObj;
-      if (!stateObj || stateObj.state !== "on") return; // <-- skip if light is off
-    
-      const sceneEntity = this.hass.states[this._config.scene_entity];
-      if (sceneEntity && sceneEntity.state !== "None") {
-        this.hass.callService("select", "select_option", {
-          entity_id: this._config.scene_entity,
-          option: "None",
-        });
-      }
-    }
+  updateBrightness() {
+    this.brightness = undefined;
+    const stateObj = this._stateObj;
+    if (!stateObj) return;
+    this.brightness = stateObj.attributes.brightness;
+  }
 
   private onCurrentBrightnessChange(e: CustomEvent<{ value?: number }>): void {
     if (e.detail.value != null) {
       this.brightness = (e.detail.value * 255) / 100;
     }
   }
-  
 
   updateActiveControl() {
     const isActiveControlSupported = this._activeControl
@@ -387,7 +328,7 @@ export class LightCard
             .entity=${entity}
             style=${styleMap(sliderStyle)}
             @current-change=${(e: CustomEvent<{ value?: number }>) => {
-            this.onCurrentBrightnessChange(e);
+              this.onCurrentBrightnessChange(e);
             }}
           ></mushroom-light-brightness-control>
         `;
@@ -396,7 +337,6 @@ export class LightCard
           <mushroom-light-color-temp-control
             .hass=${this.hass}
             .entity=${entity}
-            @color-temp-change=${() => this.resetScene()}
           ></mushroom-light-color-temp-control>
         `;
       case "color_control": {
@@ -404,39 +344,44 @@ export class LightCard
           <mushroom-light-color-control
             .hass=${this.hass}
             .entity=${entity}
-            @color-change=${() => this.resetScene()} 
           ></mushroom-light-color-control>
         `;
-       }
+      }
       case "scene_control":
-      const sceneEntity = this._config?.scene_entity
-        ? this.hass.states[this._config.scene_entity]
-        : undefined;
-    
-      const disabled =
-        !sceneEntity || !sceneEntity.state || sceneEntity.state === "unavailable";
-    
-      return html`
-        <select
-          .value=${sceneEntity?.state ?? ""}
-          .disabled=${disabled}
-          @change=${(e: Event) =>
-            this.hass.callService("select", "select_option", {
-              entity_id: this._config?.scene_entity,
-              option: (e.target as HTMLSelectElement).value,
-            })}
-        >
-          ${(sceneEntity?.attributes.options ?? []).map(
-            (option: string) =>
-              html`<option
-                value=${option}
-                ?selected=${option === sceneEntity.state}
-              >
-                ${option}
-              </option>`
-          )}
-        </select>
-      `;
+        const sceneEntity = this._config?.scene_entity
+          ? this.hass.states[this._config.scene_entity]
+          : undefined;
+
+        if (!sceneEntity) {
+          return html`<select disabled><option>Unavailable</option></select>`;
+        }
+
+        const disabled =
+          !sceneEntity ||
+          !sceneEntity.state ||
+          sceneEntity.state === "unavailable";
+
+        return html`
+          <select
+            .value=${sceneEntity?.state ?? ""}
+            .disabled=${disabled}
+            @change=${(e: Event) =>
+              this.hass.callService("select", "select_option", {
+                entity_id: this._config?.scene_entity,
+                option: (e.target as HTMLSelectElement).value,
+              })}
+          >
+            ${(sceneEntity?.attributes.options ?? []).map(
+              (option: string) =>
+                html`<option
+                  value=${option}
+                  ?selected=${option === sceneEntity.state}
+                >
+                  ${option}
+                </option>`
+            )}
+          </select>
+        `;
       default:
         return nothing;
     }
