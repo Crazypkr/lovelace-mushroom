@@ -181,12 +181,25 @@ export class LightCard
   }
 
   updateActiveControl() {
-    const isActiveControlSupported = this._activeControl
-      ? this._controls.includes(this._activeControl)
-      : false;
-    this._activeControl = isActiveControlSupported
-      ? this._activeControl
-      : this._controls[0];
+    // If there’s no config, do nothing
+    if (!this._config) return;
+
+    // If current active control is valid, keep it
+    if (this._activeControl) {
+      return;
+    }
+
+    // If no active control, pick the first from config (not state)
+    const possibleControls: LightCardControl[] = [];
+    if (this._config.show_brightness_control)
+      possibleControls.push("brightness_control");
+    if (this._config.show_color_temp_control)
+      possibleControls.push("color_temp_control");
+    if (this._config.show_color_control) possibleControls.push("color_control");
+    if (this._config.show_scene_control && this._config.scene_entity)
+      possibleControls.push("scene_control");
+
+    this._activeControl = possibleControls[0];
   }
 
   private _handleAction(ev: ActionHandlerEvent) {
