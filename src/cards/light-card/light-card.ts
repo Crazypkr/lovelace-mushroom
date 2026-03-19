@@ -142,28 +142,9 @@ export class LightCard
     this.updateBrightness();
   }
 
-  _onControlTap(ctrl, e): void {
+  _onControlTap(ctrl: LightCardControl, e: Event): void {
     e.stopPropagation();
     this._activeControl = ctrl;
-  }
-
-  protected updated(changedProperties: PropertyValues) {
-    super.updated(changedProperties);
-
-    if (!this.hass) return;
-
-    const stateObj = this._stateObj;
-    if (!stateObj) return;
-
-    // Track current light state and color/temperature
-    const currentState = stateObj.state;
-    const currentRgb = getRGBColor(stateObj)?.join(",") || "";
-    const currentTemp = stateObj.attributes.color_temp_kelvin ?? undefined;
-
-    const sceneEntity = this._config?.scene_entity
-      ? this.hass.states[this._config.scene_entity]
-      : undefined;
-    const currentScene = sceneEntity?.state;
   }
 
   updateBrightness() {
@@ -373,7 +354,7 @@ export class LightCard
           ></mushroom-light-color-control>
         `;
       }
-      case "scene_control":
+      case "scene_control": {
         const sceneEntity = this._config?.scene_entity
           ? this.hass.states[this._config.scene_entity]
           : undefined;
@@ -387,25 +368,31 @@ export class LightCard
           <select
             .value=${sceneEntity?.state ?? ""}
             .disabled=${disabled}
-            @change=${(e: Event) =>
-              this.hass.callService("select", "select_option", {
-                entity_id: this._config?.scene_entity,
+            @change=${(e: Event) => {
+              const entityId = this._config?.scene_entity;
+              if (!entityId) return;
+
+              const domain = entityId.split(".")[0];
+
+              this.hass.callService(domain, "select_option", {
+                entity_id: entityId,
                 option: (e.target as HTMLSelectElement).value,
-              })}
+              });
+            }}
           >
             ${(sceneEntity?.attributes.options ?? []).map(
-              (option: string) =>
-                html`<option
+              (option: string) => html`
+                <option
                   value=${option}
-                  ?selected=${option === sceneEntity.state}
+                  ?selected=${option === sceneEntity?.state}
                 >
                   ${option}
-                </option>`
+                </option>
+              `
             )}
           </select>
         `;
-      default:
-        return nothing;
+      }
     }
   }
 
