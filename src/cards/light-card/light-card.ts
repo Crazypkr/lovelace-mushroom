@@ -201,7 +201,7 @@ export class LightCard
 
     this._activeControl = possibleControls[0];
   }
-+
+
 
   private _handleAction(ev: ActionHandlerEvent) {
     handleAction(this, this.hass!, this._config!, ev.detail.action!);
