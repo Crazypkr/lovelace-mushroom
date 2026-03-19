@@ -16,8 +16,8 @@ export class MushroomLightSceneControl extends LitElement {
   onChange(e: CustomEvent<{ value: string }>) {
     const value = e.detail.value;
     if (!this.sceneEntity) return;
-
-    this.hass.callService("select", "select_option", {
+    const domain = this.sceneEntity.entity_id.split(".")[0];
+    this.hass.callService(domain, "select_option", {
       entity_id: this.sceneEntity.entity_id,
       option: value,
     });
